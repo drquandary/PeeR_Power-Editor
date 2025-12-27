@@ -116,14 +116,103 @@ export const microEdit = async (text: string, instruction: string): Promise<stri
   return response.text || text;
 };
 
-export const analyzeDeAI = async (text: string): Promise<any> => {
+export const humanizeText = async (text: string, style: string): Promise<string> => {
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: MODEL_COMPLEX,
+    contents: `Task: Rewrite the following academic text to sound more human and less like an AI.
+
+    Style Target: ${style}
+
+    Directives:
+    1. Vary sentence length significantly. Mix short, punchy sentences with longer, complex ones.
+    2. Remove common "AI-isms" and cliché transition words (e.g., "In conclusion," "It is important to note," "delve," "tapestry," "landscape," "foster").
+    3. Use active voice where appropriate.
+    4. Ensure the academic meaning remains precise but the flow is more natural and engaging.
+    5. Do NOT output markdown code blocks. Just return the text.
+
+    TEXT: "${text}"`,
+  });
+  return response.text || text;
+};
+
+export const anonymizeContent = async (text: string): Promise<string> => {
   const ai = getClient();
   const response = await ai.models.generateContent({
     model: MODEL_FAST,
-    contents: `Analyze the following text for AI-generated patterns and academic tone. Return a JSON object with: 
-    - stats: { wordCount, aiProbabilityScore, readabilityScore }
+    contents: `Task: Anonymize the following academic paper for double-blind peer review.
+
+    Directives:
+    1. Replace all author names with "[BLINDED AUTHOR]".
+    2. Replace all institutional affiliations with "[BLINDED INSTITUTION]".
+    3. Replace specific self-citations (e.g., "In our previous work [12]...") with "[BLINDED CITATION]".
+    4. Remove any Acknowledgments section entirely or replace content with "[BLINDED FOR REVIEW]".
+    5. Keep the rest of the text exactly as is.
+
+    TEXT: "${text}"`,
+  });
+  return response.text || text;
+};
+
+export const checkConsistency = async (text: string): Promise<any> => {
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: MODEL_FAST,
+    contents: `Analyze the provided text for consistency issues. Return a JSON object.
+
+    Checks to perform:
+    1. Acronyms: Are any acronyms used without being defined first?
+    2. Spelling: Is there a mix of US and UK English? (e.g., 'color' vs 'colour').
+    3. Citations: Are there in-text citations missing from the reference list or vice-versa?
+
+    Output Schema:
+    {
+      "issues": [
+        { "id": "string", "type": "warning" | "error", "title": "string", "description": "string", "suggestion": "string" }
+      ],
+      "generalFeedback": "string"
+    }
+
+    TEXT: "${text.substring(0, 25000)}"` ,
+    config: { responseMimeType: "application/json" }
+  });
+  return JSON.parse(response.text || "{}");
+};
+
+export const generateCoverLetter = async (text: string, journal: string): Promise<string> => {
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: MODEL_COMPLEX,
+    contents: `Task: Write a professional cover letter for submitting this paper to ${journal}.
+
+    Include:
+    1. Standard cover letter formatting (Dear Editor...).
+    2. A compelling "pitch" of why this research is novel and fits the journal.
+    3. Confirmation that the work is original and not under review elsewhere.
+    4. Suggest 3 potential reviewers (fictional names or [Insert Name]).
+
+    PAPER CONTENT: "${text.substring(0, 10000)}..."`,
+  });
+  return response.text || "";
+};
+
+export const analyzeDeAI = async (text: string): Promise<any> => {
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: MODEL_COMPLEX,
+    contents: `Act as an expert AI Detection System. Analyze the following academic text for "hallmarks of LLM generation".
+
+    Look specifically for:
+    1. Uniform sentence length and structure (lack of "burstiness").
+    2. Overuse of transition words (e.g., "Moreover," "Furthermore," "In conclusion").
+    3. Specific "AI-vocabulary" (e.g., "delve," "tapestry," "paramount," "underscores," "leverage").
+    4. Vague generalizations instead of specific evidence.
+
+    Return a JSON object with:
+    - stats: { wordCount, aiProbabilityScore (0-100), readabilityScore }
     - issues: Array of { id, type: 'warning'|'error', title, description, suggestion, snippet, replacement }
-    - generalFeedback: string
+      (For the issues, identify SPECIFIC sentences or phrases that sound robotic and suggest a "humanized" alternative.)
+    - generalFeedback: string (Detailed assessment of the "voice" of the paper.)
     
     TEXT: "${text}"`,
     config: { responseMimeType: "application/json" }

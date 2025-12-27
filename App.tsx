@@ -12,7 +12,11 @@ import {
   microEdit, 
   suggestCitations,
   findCitationPlacements,
-  agentChat 
+  agentChat,
+  humanizeText,
+  anonymizeContent,
+  checkConsistency,
+  generateCoverLetter
 } from './services/geminiService';
 import { Eraser, Wand2, Quote, Menu, X, Sparkles, MessageSquare, Download, Layers, FileText, Loader2, Upload, FileUp, ListRestart, BookOpen, ChevronRight } from 'lucide-react';
 
@@ -65,6 +69,7 @@ function App() {
   const [selection, setSelection] = useState<{ text: string, start: number, end: number, sectionId?: string } | null>(null);
   const [showMicroEditTooltip, setShowMicroEditTooltip] = useState(false);
   const [microEditLoading, setMicroEditLoading] = useState(false);
+  const [generatedCoverLetterText, setGeneratedCoverLetterText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -212,6 +217,48 @@ function App() {
     } catch (e) { setAnalysisResult(null); }
   };
 
+  const handleHumanize = async (style: string) => {
+      setMicroEditLoading(true);
+      try {
+          const newText = await humanizeText(activeSection.content, style);
+          setSections(prev => prev.map(s => s.id === activeSectionId ? { ...s, content: newText } : s));
+      } finally { setMicroEditLoading(false); }
+  };
+
+  const handleAnonymize = async () => {
+      setMicroEditLoading(true);
+      try {
+          if (isFullDocMode) {
+              const newText = await anonymizeContent(fullText);
+              setSections(modularizeText(newText));
+          } else {
+              const newText = await anonymizeContent(activeSection.content);
+              setSections(prev => prev.map(s => s.id === activeSectionId ? { ...s, content: newText } : s));
+          }
+      } finally { setMicroEditLoading(false); }
+  };
+
+  const handleConsistencyCheck = async () => {
+      setAnalysisResult({ stats: { wordCount: 0, aiProbabilityScore: 0, readabilityScore: 0 }, issues: [], generalFeedback: '', loading: true });
+      try {
+          const result = await checkConsistency(fullText);
+          setAnalysisResult({
+              stats: { wordCount: 0, aiProbabilityScore: 0, readabilityScore: 0 },
+              issues: result.issues || [],
+              generalFeedback: result.generalFeedback || "Consistency check complete.",
+              loading: false
+          });
+      } catch(e) { setAnalysisResult(null); }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+      setMicroEditLoading(true);
+      try {
+          const letter = await generateCoverLetter(fullText, journal);
+          setGeneratedCoverLetterText(letter);
+      } finally { setMicroEditLoading(false); }
+  };
+
   const exportPaper = (modular: boolean) => {
     const text = modular ? sections.map(s => `# ${s.title}\n\n${s.content}`).join('\n\n') : fullText;
     const blob = new Blob([text], { type: 'text/markdown' });
@@ -331,7 +378,13 @@ function App() {
           onAddReference={handleAddReference}
           onCiteAtSelection={handleCiteAtSelection}
           onSuggestPlacements={handleSuggestPlacements}
-          onCloseMobile={() => setMode(EditorMode.WRITE)} 
+          onCloseMobile={() => setMode(EditorMode.WRITE)}
+          onHumanize={handleHumanize}
+          onAnonymize={handleAnonymize}
+          onCheckConsistency={handleConsistencyCheck}
+          onGenerateCoverLetter={handleGenerateCoverLetter}
+          generatedCoverLetter={generatedCoverLetterText}
+          isProcessing={microEditLoading}
         />
       )}
     </div>
