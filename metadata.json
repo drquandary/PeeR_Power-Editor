@@ -1,0 +1,5 @@
+{
+  "name": "ScholarPolish",
+  "description": "An advanced academic paper editor for journal submission. Features AI detection (De-AI), style compliance, automated reviewer feedback, and structural reorganization.",
+  "requestFramePermissions": []
+}
