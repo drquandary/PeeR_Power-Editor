@@ -39,6 +39,12 @@ interface AnalysisPanelProps {
   onCiteAtSelection?: (marker: string) => void;
   onSuggestPlacements?: (paper: RelatedPaper) => void;
   onCloseMobile?: () => void;
+  onHumanize?: (style: string) => void;
+  onAnonymize?: () => void;
+  onCheckConsistency?: () => void;
+  onGenerateCoverLetter?: () => void;
+  generatedCoverLetter?: string;
+  isProcessing?: boolean;
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ 
@@ -54,9 +60,16 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
   onAddReference,
   onCiteAtSelection,
   onSuggestPlacements,
-  onCloseMobile
+  onCloseMobile,
+  onHumanize,
+  onAnonymize,
+  onCheckConsistency,
+  onGenerateCoverLetter,
+  generatedCoverLetter,
+  isProcessing
 }) => {
   const [expandedPaper, setExpandedPaper] = useState<string | null>(null);
+  const [humanizeStyle, setHumanizeStyle] = useState("Academic & Engaging");
   
   const getHeader = () => {
     switch(mode) {
@@ -65,6 +78,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       case EditorMode.FORMAT: return "Style Compliance";
       case EditorMode.REORGANIZE: return "Structural Feedback";
       case EditorMode.DISCOVERY: return "Research Discovery";
+      case EditorMode.SUBMIT: return "Submission Readiness";
       default: return "Assistant";
     }
   };
@@ -76,6 +90,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       case EditorMode.FORMAT: return "Checks citations and style rules.";
       case EditorMode.REORGANIZE: return "Optimizes flow for the target journal.";
       case EditorMode.DISCOVERY: return "Explore related literature and background research.";
+      case EditorMode.SUBMIT: return "Anonymization, consistency checks, and cover letters.";
       default: return "";
     }
   };
@@ -118,6 +133,98 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
             </div>
         </div>
         <p className="text-xs text-center text-slate-500 mt-1">Probability of AI Generation</p>
+
+        {/* Humanizer Tools */}
+        <div className="mt-6 pt-4 border-t border-slate-100">
+             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Humanizer Tools</h4>
+             <select
+                value={humanizeStyle}
+                onChange={(e) => setHumanizeStyle(e.target.value)}
+                className="w-full text-xs p-2 mb-2 border border-slate-200 rounded bg-slate-50"
+             >
+                <option value="Academic & Engaging">Academic & Engaging</option>
+                <option value="Conversational">Conversational (Blog/Op-Ed)</option>
+                <option value="Narrative">Narrative (Storytelling)</option>
+                <option value="Objective & Concise">Objective & Concise</option>
+             </select>
+             <button
+               onClick={() => onHumanize?.(humanizeStyle)}
+               disabled={isProcessing}
+               className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold flex items-center justify-center gap-2"
+             >
+                {isProcessing ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>}
+                Rewrite to Humanize
+             </button>
+             <p className="text-[10px] text-slate-400 mt-2 text-center">Applies to active section only.</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSubmitTools = () => {
+    if (mode !== EditorMode.SUBMIT) return null;
+
+    return (
+      <div className="space-y-6">
+         {/* Anonymizer */}
+         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+               <div className="p-2 bg-indigo-50 rounded-lg"><Eye className="w-5 h-5 text-indigo-600"/></div>
+               <div>
+                  <h4 className="font-bold text-sm text-slate-800">Blind Review Prep</h4>
+                  <p className="text-xs text-slate-500">Remove names, affiliations & self-citations.</p>
+               </div>
+            </div>
+            <button
+              onClick={onAnonymize}
+              disabled={isProcessing}
+              className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm"
+            >
+              {isProcessing ? "Processing..." : "Anonymize Document"}
+            </button>
+         </div>
+
+         {/* Consistency */}
+         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+               <div className="p-2 bg-amber-50 rounded-lg"><CheckCircle className="w-5 h-5 text-amber-600"/></div>
+               <div>
+                  <h4 className="font-bold text-sm text-slate-800">Consistency Check</h4>
+                  <p className="text-xs text-slate-500">Verify acronyms, spelling & citations.</p>
+               </div>
+            </div>
+            <button
+               onClick={onCheckConsistency}
+               disabled={isProcessing}
+               className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm"
+            >
+               {isProcessing ? "Checking..." : "Run Consistency Check"}
+            </button>
+         </div>
+
+         {/* Cover Letter */}
+         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+               <div className="p-2 bg-emerald-50 rounded-lg"><FileText className="w-5 h-5 text-emerald-600"/></div>
+               <div>
+                  <h4 className="font-bold text-sm text-slate-800">Cover Letter</h4>
+                  <p className="text-xs text-slate-500">Draft a submission letter for {journal}.</p>
+               </div>
+            </div>
+            <button
+              onClick={onGenerateCoverLetter}
+              disabled={isProcessing}
+              className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm"
+            >
+              {isProcessing ? "Drafting..." : "Draft Cover Letter"}
+            </button>
+         </div>
+
+         {generatedCoverLetter && (
+           <div className="bg-slate-800 text-slate-300 p-4 rounded-xl text-xs font-mono whitespace-pre-wrap">
+             {generatedCoverLetter}
+           </div>
+         )}
       </div>
     );
   };
@@ -265,13 +372,15 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {renderStats()}
         {renderDiscovery()}
-        {result && !result.loading && result.generalFeedback && mode !== EditorMode.DISCOVERY && (
+        {renderSubmitTools()}
+
+        {result && !result.loading && result.generalFeedback && mode !== EditorMode.DISCOVERY && mode !== EditorMode.SUBMIT && (
           <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-900">
             <h4 className="font-semibold mb-1 flex items-center gap-2"><Sparkles className="w-3 h-3"/> Summary</h4>
             {result.generalFeedback}
           </div>
         )}
-        {result && !result.loading && result.issues.length > 0 && mode !== EditorMode.DISCOVERY ? (
+        {result && !result.loading && result.issues.length > 0 && mode !== EditorMode.DISCOVERY && mode !== EditorMode.SUBMIT ? (
           <div className="space-y-3">
              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Findings ({result.issues.length})</h3>
              {result.issues.map((issue) => (
@@ -302,7 +411,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
                </div>
              ))}
           </div>
-        ) : (!result?.loading && mode !== EditorMode.DISCOVERY && <div className="text-center py-10 text-slate-400"><p className="text-sm">Run analysis to see results.</p></div>)}
+        ) : (!result?.loading && mode !== EditorMode.DISCOVERY && mode !== EditorMode.SUBMIT && <div className="text-center py-10 text-slate-400"><p className="text-sm">Run analysis to see results.</p></div>)}
       </div>
     </div>
   );

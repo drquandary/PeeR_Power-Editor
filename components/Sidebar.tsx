@@ -11,7 +11,8 @@ import {
   MessageSquare,
   ChevronRight,
   Hash,
-  Search
+  Search,
+  Send
 } from 'lucide-react';
 import { EditorMode, PaperSection } from '../types';
 
@@ -42,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { mode: EditorMode.REVIEW, icon: Glasses, label: 'AI Peer Review' },
     { mode: EditorMode.FORMAT, icon: Settings2, label: 'Format Check' },
     { mode: EditorMode.REORGANIZE, icon: LayoutTemplate, label: 'Reorganize' },
+    { mode: EditorMode.SUBMIT, icon: Send, label: 'Submission Prep' },
   ];
 
   return (

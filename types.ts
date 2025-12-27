@@ -6,7 +6,8 @@ export enum EditorMode {
   FORMAT = 'FORMAT',
   REORGANIZE = 'REORGANIZE',
   AGENT = 'AGENT',
-  DISCOVERY = 'DISCOVERY'
+  DISCOVERY = 'DISCOVERY',
+  SUBMIT = 'SUBMIT'
 }
 
 export enum JournalStyle {
